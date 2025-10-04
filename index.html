@@ -491,11 +491,9 @@
     
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        // Remove active class from all tabs and contents
         tabs.forEach(t => t.classList.remove('active'));
         categoryContents.forEach(c => c.classList.remove('active'));
         
-        // Add active class to clicked tab and corresponding content
         tab.classList.add('active');
         const categoryId = tab.getAttribute('data-category');
         document.getElementById(categoryId).classList.add('active');
@@ -526,7 +524,7 @@
     });
     
     // 🔧 REPLACE THIS WITH YOUR ACTUAL GAS DEPLOYMENT URL
-    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxMkQ1LztvvKdj_bcMo3SNThfL0oJgLCvdMcy4FozrYPjI4Zoxxnyo5zHvlI7SyhV4E/exec';
+    const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbz1l46op-OgrajiO3t-6KZtWRkbmClFB2oNUAeeUzX0rzyPJoWP4HzyFUEL1bThygvR/exec';
     
     async function generateProductIdeas() {
       // Get the active category
@@ -554,7 +552,8 @@
       resultsContainer.style.display = 'none';
       
       try {
-        // ✅ UPDATED FETCH CALL WITH PROPER HEADERS FOR GAS BACKEND
+        console.log('Sending request to backend...');
+        
         const response = await fetch(BACKEND_URL, {
           method: 'POST',
           headers: {
@@ -566,22 +565,22 @@
             category: activeCategory
           })
         });
-        
+  
+        console.log('Response status:', response.status);
         const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || `HTTP error! status: ${response.status}`);
-        }
+        console.log('Response data:', data);
         
         if (data.status === 'success') {
           displayResults(selectedGroup, data.data);
+        } else if (data.error) {
+          throw new Error(data.error);
         } else {
-          throw new Error(data.error || 'Unknown error occurred');
+          throw new Error('Unknown response format');
         }
         
       } catch (error) {
-        showError('An error occurred. Please try again.');
-        console.error('Error:', error);
+        console.error('Frontend error:', error);
+        showError('An error occurred. Please try again. ' + error.message);
       } finally {
         generateBtn.disabled = false;
         generateBtn.textContent = 'Generate Digital Product Ideas';
@@ -594,12 +593,19 @@
       
       // Process product ideas
       productIdeas.innerHTML = '';
-      responseData.ideas.forEach((idea, index) => {
-        const ideaElement = document.createElement('p');
-        ideaElement.className = 'product-idea';
-        ideaElement.textContent = `${index + 1}. ${idea}`;
-        productIdeas.appendChild(ideaElement);
-      });
+      if (responseData.ideas && responseData.ideas.length > 0) {
+        responseData.ideas.forEach((idea, index) => {
+          const ideaElement = document.createElement('p');
+          ideaElement.className = 'product-idea';
+          ideaElement.textContent = `${index + 1}. ${idea}`;
+          productIdeas.appendChild(ideaElement);
+        });
+      } else {
+        const noIdeasElement = document.createElement('p');
+        noIdeasElement.className = 'product-idea';
+        noIdeasElement.textContent = 'No ideas generated. Please try again.';
+        productIdeas.appendChild(noIdeasElement);
+      }
       
       resultsContainer.style.display = 'block';
     }
